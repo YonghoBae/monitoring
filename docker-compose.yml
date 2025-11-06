@@ -62,3 +62,36 @@ services:
       - monitoring-net
     depends_on:
       - prometheus
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: node-exporter
+    restart: unless-stopped
+    # [중요] 호스트의 시스템 정보를 읽기 위한 특수 권한
+    pid: "host"
+    volumes:
+      - /:/host:ro,rslave
+      # [미리 준비] 3단계를 위한 textfile-collector 볼륨 마운트
+      - ./textfile_metrics:/var/lib/node_exporter/textfile_collector:rw
+    command:
+      - '--path.rootfs=/host'
+      # [미리 준비] 3단계를 위한 textfile-collector 활성화
+      - '--collector.textfile.directory=/var/lib/node_exporter/textfile_collector'
+    networks:
+      - monitoring-net
+
+  # 7. cAdvisor (도커 컨테이너 모니터링)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - "8080:8080" # (옵션) cAdvisor 자체 UI
+    # [중요] 도커 소켓에 접근하기 위한 볼륨
+    volumes:
+      - /:/rootfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring-net
