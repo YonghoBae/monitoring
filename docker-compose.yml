@@ -41,6 +41,10 @@ services:
     volumes:
       # (O) 데이터는 /data 파티션(절대 경로) 사용
       - /data/monitoring/grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set in .env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
     networks:
       - monitoring-net
     depends_on:
@@ -58,6 +62,11 @@ services:
       - ./alertmanager/alertmanager.yml:/config/alertmanager.yml
     command:
       - '--config.file=/config/alertmanager.yml'
+      - '--config.expand-env'
+    environment:
+      ALERTMANAGER_SLACK_WEBHOOK_URL: ${ALERTMANAGER_SLACK_WEBHOOK_URL:?Set in .env}
+      ALERTMANAGER_SLACK_CHANNEL: ${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
+      ALERTMANAGER_SLACK_USERNAME: ${ALERTMANAGER_SLACK_USERNAME:-PrometheusBot}
     networks:
       - monitoring-net
     depends_on:
