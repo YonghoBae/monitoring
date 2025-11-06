@@ -1,0 +1,64 @@
+version: '3.8'
+
+networks:
+  monitoring-net:
+    driver: bridge
+
+# 1. 'volumes:' 섹션을 최상단에서 제거했습니다.
+#    (Service 볼륨에서 바로 절대경로를 쓰는 것이 더 직관적입니다.)
+
+services:
+  # 2. 프로메테우스
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      # (O) 설정 파일은 현재 위치(상대 경로) 사용
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      
+      # (O) 데이터는 /data 파티션(절대 경로) 사용
+      - /data/monitoring/prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      # [옵션] 데이터 보관 기간 및 용량 제한 (루트가 아니어도 관리는 필요!)
+      # 15일 보관, 100GB로 용량 제한 (209GB 여유 있으니 넉넉하게)
+      - '--storage.tsdb.retention.time=7d'
+      - '--storage.tsdb.retention.size=20GB'
+    networks:
+      - monitoring-net
+
+  # 3. 그라파나
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      # (O) 데이터는 /data 파티션(절대 경로) 사용
+      - /data/monitoring/grafana_data:/var/lib/grafana
+    networks:
+      - monitoring-net
+    depends_on:
+      - prometheus
+
+  # 4. 얼럿매니저
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      # (O) 설정 파일은 현재 위치(상대 경로) 사용
+      - ./alertmanager/alertmanager.yml:/config/alertmanager.yml
+    command:
+      - '--config.file=/config/alertmanager.yml'
+    networks:
+      - monitoring-net
+    depends_on:
+      - prometheus
