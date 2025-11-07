@@ -1,2 +1,6 @@
 .env
-
+.env.*
+progress
+textfile_metrics/*.prom
+prometheus/data/
+grafana/data/
