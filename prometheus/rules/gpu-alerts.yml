@@ -1,0 +1,42 @@
+groups:
+  - name: gpu-health
+    rules:
+      - alert: GPUDcgmExporterDown
+        expr: up{job="dcgm-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'dcgm-exporter가 응답하지 않음'
+          description: |
+            {{$labels.instance}} (job={{$labels.job}})에서 GPU 메트릭을 2분 이상 수집하지 못했습니다. 컨테이너와 NVIDIA 런타임 상태를 확인하세요.
+
+      - alert: GPUHighTemperature
+        expr: DCGM_FI_DEV_GPU_TEMP > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'GPU {{ $labels.gpu }} 온도 85°C 초과'
+          description: |
+            {{$labels.Hostname}}의 GPU {{$labels.gpu}} ({{ $labels.modelName }}) 온도가 5분 동안 85°C를 초과했습니다. 냉각/팬 상태를 확인하세요.
+
+      - alert: GPUHighMemoryUsage
+        expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'GPU {{ $labels.gpu }} 메모리 사용률 90% 초과'
+          description: |
+            {{$labels.Hostname}}의 GPU {{$labels.gpu}} 메모리 사용률이 5분 동안 90%를 넘었습니다. 작업 부하나 세션을 조정하세요.
+
+      - alert: GPUUtilizationStuckHigh
+        expr: DCGM_FI_DEV_GPU_UTIL > 95
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: 'GPU {{ $labels.gpu }} 사용률 95% 이상 지속'
+          description: |
+            {{$labels.Hostname}}의 GPU {{$labels.gpu}} 사용률이 10분 이상 95%를 유지했습니다. 예상된 학습/추론 작업인지 확인하세요.
