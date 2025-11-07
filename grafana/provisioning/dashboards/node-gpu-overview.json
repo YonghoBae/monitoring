@@ -1,0 +1,575 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "grafana"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "단일 호스트에서 node-exporter CPU/메모리 지표와 DCGM GPU 지표를 동시에 확인할 수 있는 통합 대시보드",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#37872D",
+                "value": null
+              },
+              {
+                "color": "#E0B400",
+                "value": 70
+              },
+              {
+                "color": "#C4162A",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "avg by (instance) ((1 - irate(node_cpu_seconds_total{mode=\"idle\",instance=~\"$instance\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU 평균 사용률",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#37872D",
+                "value": null
+              },
+              {
+                "color": "#E0B400",
+                "value": 70
+              },
+              {
+                "color": "#C4162A",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "avg by (instance) (((node_memory_MemTotal_bytes{instance=~\"$instance\"} - node_memory_MemAvailable_bytes{instance=~\"$instance\"}) / node_memory_MemTotal_bytes{instance=~\"$instance\"}) * 100)",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "title": "메모리 사용률",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "avg(node_load1{instance=~\"$instance\"})",
+          "legendFormat": "load1",
+          "refId": "A"
+        }
+      ],
+      "title": "Load Average (1m)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "CPU 사용률 상세 추이",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "mappings": [],
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "expr": "avg by (instance) ((1 - irate(node_cpu_seconds_total{mode=\"idle\",instance=~\"$instance\"}[5m])) * 100)",
+          "legendFormat": "CPU {{instance}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU 사용률 (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "GPU 온도/사용률을 같이 본다",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_GPU_TEMP{Hostname=~\"$gpu_host\",gpu=~\"$gpu_id\"}",
+          "legendFormat": "GPU {{gpu}} ({{Hostname}})",
+          "refId": "A"
+        }
+      ],
+      "title": "GPU 온도 (°C)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "mappings": [],
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_GPU_UTIL{Hostname=~\"$gpu_host\",gpu=~\"$gpu_id\"}",
+          "legendFormat": "GPU {{gpu}} Util",
+          "refId": "A"
+        }
+      ],
+      "title": "GPU Utilization (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2
+          },
+          "mappings": [],
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "expr": "DCGM_FI_DEV_FB_USED{Hostname=~\"$gpu_host\",gpu=~\"$gpu_id\"}",
+          "legendFormat": "GPU {{gpu}} 메모리 사용",
+          "refId": "A"
+        },
+        {
+          "expr": "DCGM_FI_DEV_FB_TOTAL{Hostname=~\"$gpu_host\",gpu=~\"$gpu_id\"}",
+          "legendFormat": "GPU {{gpu}} 메모리 총량",
+          "refId": "B"
+        }
+      ],
+      "title": "GPU 메모리",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "align": "auto"
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 18,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "avg by (instance) ((1 - irate(node_cpu_seconds_total{mode=\"idle\",instance=~\"$instance\"}[5m])) * 100)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "expr": "avg by (instance) (((node_memory_MemTotal_bytes{instance=~\"$instance\"} - node_memory_MemAvailable_bytes{instance=~\"$instance\"}) / node_memory_MemTotal_bytes{instance=~\"$instance\"}) * 100)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "expr": "DCGM_FI_DEV_GPU_UTIL{Hostname=~\"$gpu_host\",gpu=~\"$gpu_id\"}",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "C"
+        },
+        {
+          "expr": "(DCGM_FI_DEV_FB_USED{Hostname=~\"$gpu_host\",gpu=~\"$gpu_id\"} / DCGM_FI_DEV_FB_TOTAL{Hostname=~\"$gpu_host\",gpu=~\"$gpu_id\"}) * 100",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "D"
+        }
+      ],
+      "title": "상태 요약",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "renameByName": {
+              "Value #A": "CPU 사용률 (%)",
+              "Value #B": "메모리 사용률 (%)",
+              "Value #C": "GPU Util (%)",
+              "Value #D": "GPU 메모리 사용률 (%)"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": [
+    "gpu",
+    "node-exporter",
+    "dcgm"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": ".*"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(node_uname_info, instance)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Linux Instance",
+        "multi": false,
+        "name": "instance",
+        "options": [],
+        "query": {
+          "query": "label_values(node_uname_info, instance)",
+          "refId": "Prometheus-instance-Variable-Query"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": ".*"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(DCGM_FI_DEV_GPU_TEMP, Hostname)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "GPU Host",
+        "multi": false,
+        "name": "gpu_host",
+        "options": [],
+        "query": {
+          "query": "label_values(DCGM_FI_DEV_GPU_TEMP, Hostname)",
+          "refId": "Prometheus-gpuhost-Variable-Query"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": ".*"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(DCGM_FI_DEV_GPU_TEMP{Hostname=~\"$gpu_host\"}, gpu)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "GPU ID",
+        "multi": false,
+        "name": "gpu_id",
+        "options": [],
+        "query": {
+          "query": "label_values(DCGM_FI_DEV_GPU_TEMP{Hostname=~\"$gpu_host\"}, gpu)",
+          "refId": "Prometheus-gpuid-Variable-Query"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ]
+  },
+  "timezone": "",
+  "title": "Node + GPU Overview",
+  "uid": "node-gpu-overview",
+  "version": 1,
+  "weekStart": ""
+}
