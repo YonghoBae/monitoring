@@ -104,3 +104,25 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
     networks:
       - monitoring-net
+
+  # 8. NVIDIA GPU 모니터링 (DCGM Exporter)
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.3.5-1-ubuntu22.04
+    container_name: dcgm-exporter
+    restart: unless-stopped
+    ports:
+      - "9400:9400"
+    environment:
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu", "utility"]
+    networks:
+      - monitoring-net
+    depends_on:
+      - prometheus

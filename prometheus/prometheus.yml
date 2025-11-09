@@ -25,3 +25,8 @@ scrape_configs:
     static_configs:
       # 'cadvisor:8080' (컨테이너 이름과 기본 포트)
       - targets: ['cadvisor:8080']
+
+  - job_name: 'dcgm-exporter'
+    static_configs:
+      # 'dcgm-exporter:9400' (컨테이너 이름과 기본 포트)
+      - targets: ['dcgm-exporter:9400']
