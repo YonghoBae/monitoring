@@ -1,0 +1,63 @@
+groups:
+  - name: container-health # 알림 그룹: 컨테이너 상태
+    rules:
+      # 컨테이너 비정상 재시작 알림
+      - alert: ContainerRestarting
+        # 'cadvisor' job에서 수집된 컨테이너가 15분 동안 3번 초과 재시작
+        expr: increase(container_restarts_total{job="cadvisor", name!=""}[15m]) > 3
+        # 이 상태가 5분간 지속 시 알림
+        for: 5m
+        labels:
+          severity: warning # 심각도: 경고
+        annotations:
+          summary: "컨테이너 {{ $labels.name }} 비정상 재시작"
+          description: |
+            컨테이너 {{ $labels.name }} (instance: {{ $labels.instance }})가
+            지난 15분간 3회 이상 재시작했습니다. (CrashLooping 의심)
+
+      # 컨테이너 OOMKilled (메모리 부족으로 종료) 알림 ---
+      - alert: ContainerOOMKilled
+        # 5분 이내 OOM (Out Of Memory) 이벤트가 1번이라도 발생
+        expr: increase(container_memory_oom_events_total{job="cadvisor", name!=""}[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical # 심각도: 치명적
+        annotations:
+          summary: "컨테이너 {{ $labels.name }} OOMKilled 발생"
+          description: |
+            컨테이너 {{ $labels.name }} (instance: {{ $labels.instance }})가
+            메모리 부족으로 커널에 의해 강제 종료(OOMKilled)되었습니다.
+
+      # 컨테이너 메모리 90% 초과 알림
+      - alert: ContainerHighMemoryUsage
+        # 컨테이너의 메모리 사용량이 '설정된 메모리 제한(limit)'의 90%를 초과
+        # (메모리 제한이 0이 아닌 컨테이너만 해당)
+        expr: |
+          (
+            container_memory_usage_bytes{job="cadvisor", name!=""}
+            /
+            container_spec_memory_limit_bytes{job="cadvisor", name!=""}
+          ) > 0.90
+          AND
+          container_spec_memory_limit_bytes{job="cadvisor", name!=""} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "컨테이너 {{ $labels.name }} 메모리 90% 초과"
+          description: |
+            컨테이너 {{ $labels.name }} (instance: {{ $labels.instance }})가
+            할당된 메모리 제한의 90% 이상을 5분간 사용 중입니다.
+
+      # 컨테이너 사라짐 (다운) 알림
+      - alert: ContainerDown
+        # cAdvisor가 5분(300초) 동안 컨테이너를 발견하지 못함
+        expr: time() - container_last_seen{job="cadvisor", name!=""} > 300
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "컨테이너 {{ $labels.name }} 사라짐 (Down)"
+          description: |
+            컨테이너 {{ $labels.name }} (instance: {{ $labels.instance }})가
+            5분 이상 응답하지 않습니다. (다운 또는 제거됨)
