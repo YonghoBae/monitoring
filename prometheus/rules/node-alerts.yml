@@ -1,0 +1,24 @@
+groups:
+  - name: node-health # node-exporter 기반 호스트 상태
+    rules:
+      # CPU 사용률 80% 초과 알림
+      - alert: HostHighCpuLoad
+        expr: (100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "호스트 {{ $labels.instance }} CPU 사용률 80% 초과"
+          description: |
+            {{ $labels.instance }}의 CPU 사용률이 5분 동안 80%를 초과했습니다.
+
+      # 메모리 사용률 85% 초과 알림
+      - alert: HostHighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "호스트 {{ $labels.instance }} 메모리 사용률 85% 초과"
+          description: |
+            {{ $labels.instance }}의 메모리 사용률이 5분 동안 85%를 초과했습니다. (사용 가능 메모리 15% 미만)
