@@ -1,41 +1,53 @@
 groups:
-  - name: gpu-health
+  - name: gpu-health # 알림 규칙 그룹 이름: GPU 상태
     rules:
-      - alert: GPUDcgmExporterDown
+      # Exporter 다운 알림
+      - alert: GPUDcgmExporterDown # 알림 이름
+        # 'up' 메트릭 값이 0이면 (다운) 알림 조건 충족
         expr: up{job="dcgm-exporter"} == 0
+        # 이 상태가 2분간 지속될 경우 알림 발생
         for: 2m
         labels:
-          severity: critical
+          severity: critical # 알림 심각도: 치명적
         annotations:
-          summary: 'dcgm-exporter가 응답하지 않음'
-          description: |
+          summary: 'dcgm-exporter가 응답하지 않음' # 알림 요약
+          description: | # 알림 상세 내용
             {{$labels.instance}} (job={{$labels.job}})에서 GPU 메트릭을 2분 이상 수집하지 못했습니다. 컨테이너와 NVIDIA 런타임 상태를 확인하세요.
 
-      - alert: GPUHighTemperature
+      # GPU 고온 알림
+      - alert: GPUHighTemperature # 알림 이름
+        # GPU 온도가 85°C를 초과하면 조건 충족
         expr: DCGM_FI_DEV_GPU_TEMP > 85
+        # 이 상태가 5분간 지속될 경우 알림 발생
         for: 5m
         labels:
-          severity: warning
+          severity: warning # 알림 심각도: 경고
         annotations:
           summary: 'GPU {{ $labels.gpu }} 온도 85°C 초과'
           description: |
             {{$labels.Hostname}}의 GPU {{$labels.gpu}} ({{ $labels.modelName }}) 온도가 5분 동안 85°C를 초과했습니다. 냉각/팬 상태를 확인하세요.
 
-      - alert: GPUHighMemoryUsage
+      # GPU 메모리 과다 사용 알림
+      - alert: GPUHighMemoryUsage # 알림 이름
+        # (사용한 메모리 / 전체 메모리) 비율이 0.9 (90%)를 초과하면 조건 충족
         expr: (DCGM_FI_DEV_FB_USED / DCGM_FI_DEV_FB_TOTAL) > 0.9
+        # 이 상태가 5분간 지속될 경우 알림 발생
         for: 5m
         labels:
-          severity: warning
+          severity: warning # 알림 심각도: 경고
         annotations:
           summary: 'GPU {{ $labels.gpu }} 메모리 사용률 90% 초과'
           description: |
             {{$labels.Hostname}}의 GPU {{$labels.gpu}} 메모리 사용률이 5분 동안 90%를 넘었습니다. 작업 부하나 세션을 조정하세요.
 
-      - alert: GPUUtilizationStuckHigh
+      # GPU 사용률 지속 알림
+      - alert: GPUUtilizationStuckHigh # 알림 이름: GPU 사용률 95% 이상 지속
+        # GPU 사용률이 95%를 초과
         expr: DCGM_FI_DEV_GPU_UTIL > 95
+        # 이 상태가 10분간 지속될 경우 알림 발생 (일시적인 스파이크는 무시)
         for: 10m
         labels:
-          severity: info
+          severity: info # 알림 심각도: 정보 (주의보다는 낮은 단계)
         annotations:
           summary: 'GPU {{ $labels.gpu }} 사용률 95% 이상 지속'
           description: |

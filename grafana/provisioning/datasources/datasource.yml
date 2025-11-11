@@ -1,13 +1,25 @@
+# Grafana 프로비저닝 설정 파일의 API 버전
 apiVersion: 1
 
+# 프로비저닝할 데이터 소스 목록을 정의
 datasources:
+  # Grafana UI에 표시될 데이터 소스의 이름임.
   - name: Prometheus
+    # 이 데이터 소스의 고유 식별, 대시보드 JSON에서 이 uid를 참조
     uid: prometheus
+    # 데이터 소스의 유형
     type: prometheus
+    # Grafana 서버가 데이터 소스에 대신 접근하는 방식(브라우저 직접 접근 = direct)
     access: proxy
+    # Prometheus 서버의 주소
     url: http://prometheus:9090
+    # 이 데이터 소스를 기본값으로 설정
     isDefault: true
+    # 'true'로 설정 시, Grafana UI에서 이 데이터 소스 설정을 수정할 수 없도록 잠금
     editable: false
+    # 데이터 소스 유형('prometheus')에 특화된 추가 JSON 설정
     jsonData:
+      # Prometheus에 쿼리할 때 사용할 HTTP 메서드
       httpMethod: POST
+      # Grafana UI에서 Prometheus의 알림 규칙을 관리할 수 있도록 허용
       manageAlerts: true

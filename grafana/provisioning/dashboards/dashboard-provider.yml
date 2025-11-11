@@ -1,13 +1,26 @@
+# Grafana 프로비저닝 설정 파일의 API 버전
 apiVersion: 1
 
+# 대시보드 프로비저닝 공급자 목록을 정의
 providers:
-  - name: GPU Dashboards
+  # 공급자의 고유한 이름
+  - name: GPU dashboards
+    # 대시보드가 속할 조직 ID
     orgId: 1
+    # Grafana UI에 표시될 폴더 이름
     folder: GPU Monitoring
+    # 이 폴더의 고유 식별자
     folderUid: gpu-monitoring
+    # 프로비저닝 유형, file은 지정된 디렉토리에서 JSON 파일을 읽어옴
     type: file
+    # true로 설정 시, 프로비저닝 파일이 삭제되어도 Grafana UI에서 대시보드가 삭제되지 않음
     disableDeletion: false
+    # true로 설정 시, UI에서 수정한 내용을 프로비저닝된 대시보드에 덮어쓸 수 있게 함
+    # false는 파일이 항상 기준이 되며, UI 변경 사항은 Grafana 재시작 시 파일 내용으로 복구됨
     allowUiUpdates: false
+    # Grafana가 path 디렉토리를 스캔하여 변경 사항(추가/삭제/수정)을 확인하는 주기(초 단위)
     updateIntervalSeconds: 30
+    # file 유형 공급자에 특화된 옵션
     options:
+      #Grafana 컨테이너 내부에서 대시보드 JSON 파일들을 찾을 실제 경로
       path: /etc/grafana/provisioning/dashboards

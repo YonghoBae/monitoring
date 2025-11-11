@@ -1,15 +1,27 @@
+# Alertmanager의 전역 설정을 정의
 global:
+  # 알림이 해결 상태로 변경된 후
+  # 해결됨 알림을 보내기 전까지 대기하는 시간(기본값 5분)
   resolve_timeout: 5m
 
+# 알림을 어떻게 라우팅할지 정의하는 최상위 경로
 route:
+  # 이 경로로 들어오는 모든 알림을 수신할 기본 수신자 이름
   receiver: 'slack-notifications'
+  #알림을 그룹화할 기준 레이블, alertname이 같으면 하나의 그룹
   group_by: ['alertname']
+  #새 그룹이 생성되었을 때, 첫 알림을 보내기 전까지 대기하는 시간
   group_wait: 30s
+  #이미 알림을 보낸 그룹에 대해, 다음 알림을 보내기 전까지 대기하는 시간
   group_interval: 5m
+  # 동일한 알림이 계속 발생 중일 때, 알림을 다시 보내는 주기
   repeat_interval: 3h
 
+# 알림을 실제 수신하는 대상 목록
 receivers:
+  #'slack-notifications'라는 이름의 수신자 정의
   - name: 'slack-notifications'
+    # 이 수신자가 사용할 Slack 설정 목록
     slack_configs:
       - api_url: '${ALERTMANAGER_SLACK_WEBHOOK_URL}'
         channel: '${ALERTMANAGER_SLACK_CHANNEL}'
