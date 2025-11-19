@@ -137,9 +137,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "apollo_periodic_ms_max{metric=\"apollo_frame_processing_latency_ms\", apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}",
+          "expr": "apollo:frame_latency_ratio:avg_1m{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"} * 16",
           "intervalFactor": 1,
-          "legendFormat": "Frame latency max",
+          "legendFormat": "Frame latency avg (1m)",
           "refId": "A"
         },
         {
@@ -147,9 +147,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "apollo_periodic_ms_max{metric=\"apollo_input_processing_latency_ms\", apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}",
+          "expr": "apollo:input_processing_latency:avg_1m{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}",
           "intervalFactor": 1,
-          "legendFormat": "Input processing latency max",
+          "legendFormat": "Input processing latency avg (1m)",
           "refId": "B"
         },
         {
@@ -162,7 +162,7 @@
           "refId": "C"
         }
       ],
-      "title": "Frame/Input Latency (max, 10s)",
+      "title": "Frame/Input Latency (1m avg)",
       "type": "timeseries"
     },
     {
@@ -228,8 +228,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "apollo_periodic_ms_max{metric=\"apollo_input_queue_depth\", apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}",
-          "legendFormat": "Input queue depth (10s max)",
+          "expr": "apollo:input_queue_depth:avg_1m{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}",
+          "legendFormat": "Input queue depth (1m avg)",
           "refId": "A"
         },
         {
@@ -237,18 +237,9 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "apollo:input_queue_depth_max{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}",
-          "legendFormat": "Input queue depth (5m window)",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "apollo:session_instability_score{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}",
+          "expr": "apollo:session_instability_score{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}",
           "legendFormat": "Instability score",
-          "refId": "C"
+          "refId": "B"
         }
       ],
       "title": "Input queue depth & instability",
@@ -292,43 +283,55 @@
       },
       "pluginVersion": "10.2.3",
       "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "format": "table",
+            "instant": true,
+            "intervalFactor": 1,
+            "legendFormat": "",
+            "refId": "A",
+            "expr": "apollo:session_instability_score{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
           },
-          "format": "table",
-          "instant": true,
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "refId": "A",
-          "expr": "apollo:session_instability_score{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "format": "table",
+            "instant": true,
+            "intervalFactor": 1,
+            "legendFormat": "",
+            "refId": "B",
+            "expr": "apollo:frame_latency_ratio:avg_1m{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
           },
-          "format": "table",
-          "instant": true,
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "refId": "B",
-          "expr": "apollo:frame_latency_over_budget_ratio{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "format": "table",
+            "instant": true,
+            "intervalFactor": 1,
+            "legendFormat": "",
+            "refId": "C",
+            "expr": "apollo:input_processing_latency:avg_1m{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
           },
-          "format": "table",
-          "instant": true,
-          "intervalFactor": 1,
-          "legendFormat": "",
-          "refId": "C",
-          "expr": "apollo:input_processing_latency_max{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}"
-        }
-      ],
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "prometheus"
+            },
+            "format": "table",
+            "instant": true,
+            "intervalFactor": 1,
+            "legendFormat": "",
+            "refId": "D",
+            "expr": "apollo:input_queue_depth:avg_1m{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
+          }
+        ],
       "title": "Snapshot – key indicators",
       "transformations": [
         {
@@ -398,6 +401,62 @@
         "query": {
           "query": "label_values(apollo_periodic_ms_sum{metric=\"apollo_encode_time_ms\", apollo_instance=~\"$apollo_instance\"}, instance)",
           "refId": "instance"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": ".*"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(apollo_client_connected, client_type)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Client type",
+        "multi": false,
+        "name": "client_type",
+        "options": [],
+        "query": {
+          "query": "label_values(apollo_client_connected, client_type)",
+          "refId": "client_type"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": ".*"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(apollo_client_connected{client_type=~\"$client_type\"}, client_name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Client name",
+        "multi": false,
+        "name": "client_name",
+        "options": [],
+        "query": {
+          "query": "label_values(apollo_client_connected{client_type=~\"$client_type\"}, client_name)",
+          "refId": "client_name"
         },
         "refresh": 2,
         "regex": "",
