@@ -1,0 +1,56 @@
+groups:
+  - name: apollo-session.rules
+    interval: 30s
+    rules:
+      - record: apollo:frame_latency_over_budget_ratio
+        expr: |
+          max without(metric) (
+            max_over_time(apollo_periodic_ms_max{metric="apollo_frame_processing_latency_ms"}[1m])
+              / 16
+          )
+
+      - record: apollo:input_queue_depth_max
+        expr: |
+          max without(metric) (
+            max_over_time(apollo_periodic_ms_max{metric="apollo_input_queue_depth"}[1m])
+          )
+
+      - record: apollo:input_processing_latency_max
+        expr: |
+          max without(metric) (
+            max_over_time(apollo_periodic_ms_max{metric="apollo_input_processing_latency_ms"}[1m])
+          )
+
+      - record: apollo:session_instability_score
+        expr: |
+          clamp_max(
+            clamp_min(apollo:frame_latency_over_budget_ratio - 1, 0) * 0.6
+            + clamp_min(apollo:input_queue_depth_max / 3, 0) * 0.3
+            + clamp_min(apollo:input_processing_latency_max / 40, 0) * 0.1,
+            1
+          )
+
+  - name: apollo-session.alerts
+    interval: 30s
+    rules:
+      - alert: ApolloSessionUnstableWarning
+        expr: apollo:session_instability_score > 0.4
+        for: 2m
+        labels:
+          service: apollo
+          severity: warning
+        annotations:
+          summary: 'Apollo 세션이 불안정(Warning)'
+          description: |
+            Instability score {{ $value | printf "%.2f" }} (instance={{ $labels.instance }}, apollo_instance={{ $labels.apollo_instance }}).
+
+      - alert: ApolloSessionCritical
+        expr: (apollo:frame_latency_over_budget_ratio > 1.5) or (apollo:input_queue_depth_max > 2)
+        for: 1m
+        labels:
+          service: apollo
+          severity: critical
+        annotations:
+          summary: 'Apollo 세션 치명적 불안정(Critical)'
+          description: |
+            Frame latency ratio {{ $labels.instance }}={{ $value | printf "%.2f" }} / Queue depth {{ $labels.apollo_instance }} exceeding safe range.
