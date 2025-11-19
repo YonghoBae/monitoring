@@ -29,3 +29,16 @@ scrape_configs:
     static_configs:
       # 'dcgm-exporter:9400' (컨테이너 이름과 기본 포트)
       - targets: ['dcgm-exporter:9400']
+
+  - job_name: 'apollo'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    scheme: https
+    metrics_path: /metrics
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets: ['172.30.1.1:47990']
+        labels:
+          apollo_instance: 'homeserver-apollo'
+          apollo_location: 'homeserver'
