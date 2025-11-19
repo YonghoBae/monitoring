@@ -1,56 +1,188 @@
 groups:
-  - name: apollo-session.rules
+  - name: apollo-session.recording
     interval: 30s
     rules:
-      - record: apollo:frame_latency_over_budget_ratio
+      - record: apollo:client_active
+        expr: apollo_client_connected == 1
+
+      - record: apollo:frame_latency_ms_with_client
         expr: |
           max without(metric) (
-            max_over_time(apollo_periodic_ms_max{metric="apollo_frame_processing_latency_ms"}[1m])
-              / 16
+            apollo_periodic_ms_max{metric="apollo_frame_processing_latency_ms"}
+              * on() group_left(client_name, client_type)
+                apollo:client_active
           )
 
-      - record: apollo:input_queue_depth_max
+      - record: apollo:input_processing_latency_ms_with_client
         expr: |
           max without(metric) (
-            max_over_time(apollo_periodic_ms_max{metric="apollo_input_queue_depth"}[1m])
+            apollo_periodic_ms_max{metric="apollo_input_processing_latency_ms"}
+              * on() group_left(client_name, client_type)
+                apollo:client_active
           )
 
-      - record: apollo:input_processing_latency_max
+      - record: apollo:input_queue_depth_with_client
         expr: |
           max without(metric) (
-            max_over_time(apollo_periodic_ms_max{metric="apollo_input_processing_latency_ms"}[1m])
+            apollo_periodic_ms_max{metric="apollo_input_queue_depth"}
+              * on() group_left(client_name, client_type)
+                apollo:client_active
+          )
+
+      - record: apollo:frame_latency_ratio:avg_1m
+        expr: |
+          sum by (apollo_instance, apollo_location, instance, client_name, client_type) (
+            avg_over_time(apollo:frame_latency_ms_with_client[1m]) / 16
+          )
+
+      - record: apollo:input_processing_latency:avg_1m
+        expr: |
+          sum by (apollo_instance, apollo_location, instance, client_name, client_type) (
+            avg_over_time(apollo:input_processing_latency_ms_with_client[1m])
+          )
+
+      - record: apollo:input_queue_depth:avg_1m
+        expr: |
+          sum by (apollo_instance, apollo_location, instance, client_name, client_type) (
+            avg_over_time(apollo:input_queue_depth_with_client[1m])
+          )
+
+      - record: apollo:score_norm:frame
+        expr: |
+          (
+            clamp_min(
+              clamp_max(
+                (apollo:frame_latency_ratio:avg_1m{client_type="game"} - 1.0) / 1.0,
+                1
+              ),
+              0
+            )
+          )
+          or
+          (
+            clamp_min(
+              clamp_max(
+                (apollo:frame_latency_ratio:avg_1m{client_type="general"} - 1.0) / 1.5,
+                1
+              ),
+              0
+            )
+          )
+
+      - record: apollo:score_norm:queue
+        expr: |
+          (
+            clamp_min(
+              clamp_max(
+                (apollo:input_queue_depth:avg_1m{client_type="game"} - 0.2) / 1.8,
+                1
+              ),
+              0
+            )
+          )
+          or
+          (
+            clamp_min(
+              clamp_max(
+                (apollo:input_queue_depth:avg_1m{client_type="general"} - 0.2) / 2.3,
+                1
+              ),
+              0
+            )
+          )
+
+      - record: apollo:score_norm:input
+        expr: |
+          (
+            clamp_min(
+              clamp_max(
+                (apollo:input_processing_latency:avg_1m{client_type="game"} - 16) / 34,
+                1
+              ),
+              0
+            )
+          )
+          or
+          (
+            clamp_min(
+              clamp_max(
+                (apollo:input_processing_latency:avg_1m{client_type="general"} - 40) / 80,
+                1
+              ),
+              0
+            )
           )
 
       - record: apollo:session_instability_score
         expr: |
-          clamp_max(
-            clamp_min(apollo:frame_latency_over_budget_ratio - 1, 0) * 0.6
-            + clamp_min(apollo:input_queue_depth_max / 3, 0) * 0.3
-            + clamp_min(apollo:input_processing_latency_max / 40, 0) * 0.1,
-            1
+          (
+            clamp_max(
+              apollo:score_norm:frame{client_type="game"} * 0.2
+              + apollo:score_norm:queue{client_type="game"} * 0.5
+              + apollo:score_norm:input{client_type="game"} * 0.3,
+              1
+            )
+          )
+          or
+          (
+            clamp_max(
+              apollo:score_norm:frame{client_type="general"} * 0.2
+              + apollo:score_norm:queue{client_type="general"} * 0.3
+              + apollo:score_norm:input{client_type="general"} * 0.5,
+              1
+            )
           )
 
   - name: apollo-session.alerts
     interval: 30s
     rules:
-      - alert: ApolloSessionUnstableWarning
-        expr: apollo:session_instability_score > 0.4
-        for: 2m
+      - alert: ApolloGameHighFrameLatency
+        expr: |
+          (
+            apollo:frame_latency_ratio:avg_1m{client_type="game"} > 1.25
+          )
+          and on(client_name, client_type)
+          apollo:client_active
+        for: 45s
         labels:
           service: apollo
           severity: warning
+          category: video
         annotations:
-          summary: 'Apollo 세션이 불안정(Warning)'
+          summary: 'Game 세션 프레임 지연 경고'
           description: |
-            Instability score {{ $value | printf "%.2f" }} (instance={{ $labels.instance }}, apollo_instance={{ $labels.apollo_instance }}).
+            {{ $labels.client_name }} ({{ $labels.client_type }}) 프레임 지연이 1분 평균 {{ $value | printf "%.2f" }}배로 상승했습니다.
 
-      - alert: ApolloSessionCritical
-        expr: (apollo:frame_latency_over_budget_ratio > 1.5) or (apollo:input_queue_depth_max > 2)
-        for: 1m
+      - alert: ApolloGameInputBacklog
+        expr: |
+          (
+            apollo:input_queue_depth:avg_1m{client_type="game"} > 0.5
+          )
+          and on(client_name, client_type)
+          apollo:client_active
+        for: 0s
         labels:
           service: apollo
           severity: critical
+          category: input
         annotations:
-          summary: 'Apollo 세션 치명적 불안정(Critical)'
+          summary: 'Game 입력 큐 적체 치명'
           description: |
-            Frame latency ratio {{ $labels.instance }}={{ $value | printf "%.2f" }} / Queue depth {{ $labels.apollo_instance }} exceeding safe range.
+            {{ $labels.client_name }} ({{ $labels.client_type }}) 입력 큐가 평균 {{ $value | printf "%.2f" }} 깊이로 적체되었습니다.
+
+      - alert: ApolloGeneralTypingLag
+        expr: |
+          (
+            apollo:input_processing_latency:avg_1m{client_type="general"} > 100
+          )
+          and on(client_name, client_type)
+          apollo:client_active
+        for: 1m
+        labels:
+          service: apollo
+          severity: warning
+          category: latency
+        annotations:
+          summary: 'General 입력 지연 경고'
+          description: |
+            {{ $labels.client_name }} ({{ $labels.client_type }}) 입력 지연이 1분 평균 {{ $value | printf "%.0f" }}ms로 증가했습니다.
