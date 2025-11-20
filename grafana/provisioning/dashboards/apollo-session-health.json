@@ -85,7 +85,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "apollo:session_instability_score{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\"}",
+          "expr": "apollo:session_instability_score{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}",
           "intervalFactor": 1,
           "legendFormat": "{{apollo_instance}}",
           "refId": "A"
@@ -100,7 +100,56 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "10초 스크랩 기준 프레임/입력 지연의 최대치를 비교합니다. 빨간 영역은 프레임 Budget(16ms)을 초과한 상태입니다.",
+      "description": "10초 단위 입력 큐 최대 깊이를 그대로 노출해 순간 적체 여부를 파악합니다.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "lines",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "auto"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "apollo:input_queue_depth_with_client{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}",
+          "legendFormat": "Input queue depth (10s max)",
+          "refId": "A"
+        }
+      ],
+      "title": "Input Queue Depth (10s max)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "1분 평균 프레임/입력 지연을 비교합니다. 빨간 영역은 프레임 Budget(16ms)을 초과한 상태입니다.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -170,7 +219,77 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "최근 5분 동안의 입력 큐 최대 깊이와 안정성 점수 변화를 한 패널에서 확인합니다.",
+      "description": "10초 스크랩 기준 프레임/입력 지연의 최대치를 그대로 노출합니다. 순간적인 스파이크를 확인할 때 사용하세요.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "lines",
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "showPoints": "never"
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "apollo:frame_latency_ms_with_client{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}",
+          "intervalFactor": 1,
+          "legendFormat": "Frame latency (10s max)",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "apollo:input_processing_latency_ms_with_client{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}",
+          "intervalFactor": 1,
+          "legendFormat": "Input processing latency (10s max)",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "scalar(vector(16))",
+          "legendFormat": "16ms budget",
+          "refId": "C"
+        }
+      ],
+      "title": "Frame/Input Latency (10s max)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "최근 1분 평균 입력 큐 깊이와 Instability Score 변화를 함께 확인합니다.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -208,8 +327,8 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 8
+        "x": 12,
+        "y": 16
       },
       "id": 3,
       "options": {
@@ -260,9 +379,9 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 8
+        "w": 24,
+        "x": 0,
+        "y": 24
       },
       "id": 4,
       "options": {
@@ -327,11 +446,47 @@
             "format": "table",
             "instant": true,
             "intervalFactor": 1,
-            "legendFormat": "",
-            "refId": "D",
-            "expr": "apollo:input_queue_depth:avg_1m{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
-          }
-        ],
+          "legendFormat": "",
+          "refId": "D",
+          "expr": "apollo:input_queue_depth:avg_1m{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "Frame latency (10s max)",
+          "refId": "E",
+          "expr": "apollo:frame_latency_ms_with_client{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "Input latency (10s max)",
+          "refId": "F",
+          "expr": "apollo:input_processing_latency_ms_with_client{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "format": "table",
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "Input queue (10s max)",
+          "refId": "G",
+          "expr": "apollo:input_queue_depth_with_client{apollo_instance=~\"$apollo_instance\", instance=~\"$instance\", client_type=~\"$client_type\", client_name=~\"$client_name\"}"
+        }
+      ],
       "title": "Snapshot – key indicators",
       "transformations": [
         {
