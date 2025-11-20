@@ -3,48 +3,79 @@ groups:
     interval: 30s
     rules:
       - record: apollo:client_active
-        expr: apollo_client_connected == 1
+        expr: |
+          label_replace(
+            sum by (client_name, client_type) (apollo_client_connected == 1),
+            "job", "apollo", "", ""
+          )
 
       - record: apollo:frame_latency_ms_with_client
         expr: |
           max without(metric) (
             apollo_periodic_ms_max{metric="apollo_frame_processing_latency_ms"}
-              * on() group_left(client_name, client_type)
+              * on(job) group_left(client_name, client_type)
                 apollo:client_active
           )
+
+      - record: apollo:frame_latency_avg_ms_with_client
+        expr: |
+          (
+            apollo_periodic_ms_sum{metric="apollo_frame_processing_latency_ms"}
+              / clamp_min(apollo_periodic_ms_count{metric="apollo_frame_processing_latency_ms"}, 1)
+          )
+            * on(job) group_left(client_name, client_type)
+              apollo:client_active
 
       - record: apollo:input_processing_latency_ms_with_client
         expr: |
           max without(metric) (
             apollo_periodic_ms_max{metric="apollo_input_processing_latency_ms"}
-              * on() group_left(client_name, client_type)
+              * on(job) group_left(client_name, client_type)
                 apollo:client_active
           )
+
+      - record: apollo:input_processing_latency_avg_ms_with_client
+        expr: |
+          (
+            apollo_periodic_ms_sum{metric="apollo_input_processing_latency_ms"}
+              / clamp_min(apollo_periodic_ms_count{metric="apollo_input_processing_latency_ms"}, 1)
+          )
+            * on(job) group_left(client_name, client_type)
+              apollo:client_active
 
       - record: apollo:input_queue_depth_with_client
         expr: |
           max without(metric) (
             apollo_periodic_ms_max{metric="apollo_input_queue_depth"}
-              * on() group_left(client_name, client_type)
+              * on(job) group_left(client_name, client_type)
                 apollo:client_active
           )
+
+      - record: apollo:input_queue_depth_avg_with_client
+        expr: |
+          (
+            apollo_periodic_ms_sum{metric="apollo_input_queue_depth"}
+              / clamp_min(apollo_periodic_ms_count{metric="apollo_input_queue_depth"}, 1)
+          )
+            * on(job) group_left(client_name, client_type)
+              apollo:client_active
 
       - record: apollo:frame_latency_ratio:avg_1m
         expr: |
           sum by (apollo_instance, apollo_location, instance, client_name, client_type) (
-            avg_over_time(apollo:frame_latency_ms_with_client[1m]) / 16
+            avg_over_time(apollo:frame_latency_avg_ms_with_client[1m]) / 16
           )
 
       - record: apollo:input_processing_latency:avg_1m
         expr: |
           sum by (apollo_instance, apollo_location, instance, client_name, client_type) (
-            avg_over_time(apollo:input_processing_latency_ms_with_client[1m])
+            avg_over_time(apollo:input_processing_latency_avg_ms_with_client[1m])
           )
 
       - record: apollo:input_queue_depth:avg_1m
         expr: |
           sum by (apollo_instance, apollo_location, instance, client_name, client_type) (
-            avg_over_time(apollo:input_queue_depth_with_client[1m])
+            avg_over_time(apollo:input_queue_depth_avg_with_client[1m])
           )
 
       - record: apollo:score_norm:frame
